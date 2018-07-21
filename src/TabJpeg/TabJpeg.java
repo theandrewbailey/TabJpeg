@@ -83,6 +83,7 @@ public class TabJpeg extends javax.swing.JFrame {
         chromaGroup = new javax.swing.ButtonGroup();
         openFileChooser = new javax.swing.JFileChooser();
         saveFileChooser = new javax.swing.JFileChooser();
+        tuningGroup = new javax.swing.ButtonGroup();
         MainPanel = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
         OpenButton = new javax.swing.JButton();
@@ -100,6 +101,10 @@ public class TabJpeg extends javax.swing.JFrame {
         grayscale = new javax.swing.JRadioButton();
         chroma411 = new javax.swing.JRadioButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 0));
+        tuninghvs = new javax.swing.JRadioButton();
+        tuningpsnr = new javax.swing.JRadioButton();
+        tuningssim = new javax.swing.JRadioButton();
+        tuningmssim = new javax.swing.JRadioButton();
         qualitySlider = new javax.swing.JSlider();
         jPanel2 = new javax.swing.JPanel();
         SaveButton = new javax.swing.JButton();
@@ -115,7 +120,6 @@ public class TabJpeg extends javax.swing.JFrame {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle(DEFAULT_TITLE);
         setMinimumSize(new java.awt.Dimension(600, 400));
-        setPreferredSize(new java.awt.Dimension(1200, 900));
 
         MainPanel.setAlignmentX(0.0F);
         MainPanel.setMinimumSize(new java.awt.Dimension(0, 0));
@@ -146,7 +150,7 @@ public class TabJpeg extends javax.swing.JFrame {
         xLabel.setText("×");
         OutputPanel.add(xLabel);
 
-        ySpinner.setModel(new javax.swing.SpinnerNumberModel(Integer.valueOf(0), Integer.valueOf(0), null, Integer.valueOf(1)));
+        ySpinner.setModel(new javax.swing.SpinnerNumberModel(0, 0, null, 1));
         ySpinner.setMaximumSize(new java.awt.Dimension(100, 28));
         ySpinner.setPreferredSize(new java.awt.Dimension(100, 28));
         OutputPanel.add(ySpinner);
@@ -229,6 +233,47 @@ public class TabJpeg extends javax.swing.JFrame {
         chroma411.getAccessibleContext().setAccessibleDescription("4x1");
 
         OutputPanel.add(filler1);
+
+        tuningGroup.add(tuninghvs);
+        tuninghvs.setSelected(true);
+        tuninghvs.setText("HVS");
+        tuninghvs.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chromaActionPerformed(evt);
+            }
+        });
+        OutputPanel.add(tuninghvs);
+        tuninghvs.getAccessibleContext().setAccessibleDescription("hvs-psnr");
+
+        tuningGroup.add(tuningpsnr);
+        tuningpsnr.setText("PSNR");
+        tuningpsnr.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chromaActionPerformed(evt);
+            }
+        });
+        OutputPanel.add(tuningpsnr);
+        tuningpsnr.getAccessibleContext().setAccessibleDescription("psnr");
+
+        tuningGroup.add(tuningssim);
+        tuningssim.setText("SSIM");
+        tuningssim.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chromaActionPerformed(evt);
+            }
+        });
+        OutputPanel.add(tuningssim);
+        tuningssim.getAccessibleContext().setAccessibleDescription("ssim");
+
+        tuningGroup.add(tuningmssim);
+        tuningmssim.setText("MSSIM");
+        tuningmssim.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chromaActionPerformed(evt);
+            }
+        });
+        OutputPanel.add(tuningmssim);
+        tuningmssim.getAccessibleContext().setAccessibleDescription("ms-ssim");
 
         MainPanel.add(OutputPanel);
 
@@ -374,6 +419,14 @@ public class TabJpeg extends javax.swing.JFrame {
                 break;
             }
         }
+        String tuning = "-tune-hvs-psnr";
+        for (Object b : Collections.list(tuningGroup.getElements())) {
+            JRadioButton r = (JRadioButton) b;
+            if (r.isSelected()) {
+                tuning = "-tune-" + r.getAccessibleContext().getAccessibleDescription();
+                break;
+            }
+        }
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream(10*1024*1024);
             ImageIO.write(selected, "BMP", baos);
@@ -383,7 +436,8 @@ public class TabJpeg extends javax.swing.JFrame {
              (int)xSpinner.getValue(), 
              (int)ySpinner.getValue(), 
              qualitySlider.getValue(), 
-             chroma
+             chroma, 
+             tuning
              );
             ImageIcon outputicon = new ImageIcon(output);
             outputImage.setIcon(outputicon);
@@ -478,6 +532,11 @@ public class TabJpeg extends javax.swing.JFrame {
     private javax.swing.JLabel outputLabel;
     private javax.swing.JSlider qualitySlider;
     private javax.swing.JFileChooser saveFileChooser;
+    private javax.swing.ButtonGroup tuningGroup;
+    private javax.swing.JRadioButton tuninghvs;
+    private javax.swing.JRadioButton tuningmssim;
+    private javax.swing.JRadioButton tuningpsnr;
+    private javax.swing.JRadioButton tuningssim;
     private javax.swing.JLabel xLabel;
     private javax.swing.JSpinner xSpinner;
     private javax.swing.JSpinner ySpinner;

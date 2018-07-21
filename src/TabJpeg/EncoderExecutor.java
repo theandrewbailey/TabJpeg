@@ -5,11 +5,7 @@
  */
 package TabJpeg;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,36 +14,39 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author alpha
  */
 public class EncoderExecutor {
-    private static EncoderExecutor singleton = new EncoderExecutor();
-    private static ThreadPoolExecutor threadpool = new ThreadPoolExecutor(3, 4, 100000, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(10));
-    private volatile Boolean beingused = false;
 
-    static{threadpool.prestartAllCoreThreads();}
+    private static final EncoderExecutor SINGLETON = new EncoderExecutor();
+    private static final ThreadPoolExecutor THREADPOOL = new ThreadPoolExecutor(3, 4, 100000, TimeUnit.DAYS, new ArrayBlockingQueue<Runnable>(10));
+    private final Boolean beingused = false;
 
-    public static EncoderExecutor getEncoderExecutor(){
-        return singleton;
+    static {
+        THREADPOOL.prestartAllCoreThreads();
     }
-    public static void transferStream(InputStream in, OutputStream out) throws IOException{
-        byte content[] = new byte[4096];
+
+    public static EncoderExecutor getEncoderExecutor() {
+        return SINGLETON;
+    }
+
+    public static void transferStream(InputStream in, OutputStream out) throws IOException {
+        byte content[] = new byte[65536];
         int readCount = 0;
         int totalReadcount = 0;
-        while(-1 != (readCount = in.read(content))){
-            out.write(content,0,readCount);
+        while (-1 != (readCount = in.read(content))) {
+            out.write(content, 0, readCount);
             totalReadcount += readCount;
         }
         //System.out.println("Total readsize: "+totalReadcount);
     }
-    public static byte[] toByteArray(InputStream input){
+
+    public static byte[] toByteArray(InputStream input) {
         try {
-            ByteArrayOutputStream output = new ByteArrayOutputStream(10*1024*1024);
+            ByteArrayOutputStream output = new ByteArrayOutputStream(10 * 1024 * 1024);
             transferStream(input, output);
             return output.toByteArray();
         } catch (IOException ex) {
@@ -55,47 +54,56 @@ public class EncoderExecutor {
         }
         return new byte[0];
     }
-    private class Streamreader implements Callable<byte[]>{
+
+    private class Streamreader implements Callable<byte[]> {
+
         InputStream input;
         OutputStream output;
-        public Streamreader(InputStream in, OutputStream out){
-            input=in;
-            output=out;
+
+        public Streamreader(InputStream in, OutputStream out) {
+            input = in;
+            output = out;
         }
+
+        @Override
         public byte[] call() throws Exception {
             transferStream(input, output);
             input.close();
             output.close();
             return new byte[0];
         }
-        
+
     }
-    private EncoderExecutor(){}
+
+    private EncoderExecutor() {
+    }
     private byte[] lastrun;
-    public void resetLastrun(){
+
+    public void resetLastrun() {
         lastrun = null;
     }
-    public byte[] encode(byte[] f, int sizex, int sizey, int quality, String chroma){
-        synchronized (beingused){
-            try{
-                ByteArrayOutputStream output = new ByteArrayOutputStream(10*1024*1024);
-                String command = "cjpeg -quality "+quality;
-                command += chroma == "0x0" ? " -grayscale" : " -sample "+chroma;
+
+    public byte[] encode(byte[] f, int sizex, int sizey, int quality, String chroma, String tuning) {
+        synchronized (beingused) {
+            try {
+                ByteArrayOutputStream output = new ByteArrayOutputStream(10 * 1024 * 1024);
+                String command = "cjpeg -quality " + quality + " " + tuning + " ";
+                command += "0x0".equals(chroma) ? " -grayscale" : " -sample " + chroma;
                 //command += " "+f.getAbsolutePath();
-                
+
                 Process encoder = Runtime.getRuntime().exec(command);
                 encoder.getOutputStream().write(f);
                 //transferStream(f, encoder.getOutputStream());
                 //threadpool.submit(new Streamreader(f, encoder.getOutputStream()));
-                Future<byte[]> fut = threadpool.submit(new Streamreader(encoder.getInputStream(), output));
+                Future<byte[]> fut = THREADPOOL.submit(new Streamreader(encoder.getInputStream(), output));
 
                 //System.out.println("running command: "+command);
                 encoder.getOutputStream().close();
                 int exitcode = encoder.waitFor();
                 fut.get();
-                if (exitcode == 0){
+                if (exitcode == 0) {
                     //System.out.println(exitcode);
-                    lastrun=output.toByteArray();
+                    lastrun = output.toByteArray();
                 } else {
                     //System.out.println(exitcode);
                     System.out.println(new String(output.toByteArray()));
